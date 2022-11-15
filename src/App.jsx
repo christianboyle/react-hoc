@@ -13,17 +13,28 @@ const fetchData = () => {
   return { data: TODOS }
 }
 
-const withConditionalFeedback =
-  ({ loadingFeedback, noDataFeedback, dataEmptyFeedback }) =>
-  (Component) =>
-  (props) => {
-    if (props.isLoading) return <div>{loadingFeedback || 'Loading data.'}</div>
-    if (!props.data) return <div>{noDataFeedback || 'No data loaded yet.'}</div>
-    if (!props.data.length)
-      return <div>{dataEmptyFeedback || 'Data is empty.'}</div>
+const compose = (...fns) =>
+  fns.reduceRight(
+    (prevFn, nextFn) =>
+      (...args) =>
+        nextFn(prevFn(...args)),
+    (value) => value
+  )
 
-    return <Component {...props} />
-  }
+const withLoadingFeedback = (Component) => (props) => {
+  if (props.isLoading) return <div>Loading data.</div>
+  return <Component {...props} />
+}
+
+const withNoDataFeedback = (Component) => (props) => {
+  if (!props.data) return <div>No data loaded yet.</div>
+  return <Component {...props} />
+}
+
+const withDataEmptyFeedback = (Component) => (props) => {
+  if (!props.data.length) return <div>Data is empty.</div>
+  return <Component {...props} />
+}
 
 const App = () => {
   const { data, isLoading } = fetchData()
@@ -49,10 +60,10 @@ const TodoItem = ({ item }) => {
   )
 }
 
-const TodoList = withConditionalFeedback({
-  loadingFeedback: 'Loading Todos.',
-  noDataFeedback: 'No Todos loaded yet.',
-  dataEmptyFeedback: 'Todos are empty.'
-})(BaseTodoList)
+const TodoList = compose(
+  withLoadingFeedback,
+  withNoDataFeedback,
+  withDataEmptyFeedback
+)(BaseTodoList)
 
 export default App
